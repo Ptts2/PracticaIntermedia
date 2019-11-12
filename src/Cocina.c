@@ -20,24 +20,26 @@ int main(int argc, char *argv[]){
 
     /*CREACIÓN DE HIJOS*/
 
-    sommelier = fork();
-
-    if(sommelier == 0){
+    if( (sommelier = fork()) == 0){
         mozo = fork();
     }else{
         jefeDeSala = fork();
 
-        if(chef == 0){
+        if(chef == getpid()){
             //Creo a los pinches
             for(i = 0; i<numPinches; i++){
                 pidPinches[i]=fork();
-
                 if(pidPinches[i] == 0){
                     break;
                 }
             }
         }
     }
+    
+    for(int i = 0; i<numPinches+3; i++){
+        wait(NULL);
+    }
+    
     
     return 0;
 
