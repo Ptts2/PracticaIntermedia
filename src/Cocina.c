@@ -26,7 +26,8 @@ int main(int argc, char *argv[]){
         mozo = fork();
     }else{
         jefeDeSala = fork();
-        if(jefeDeSala != 0){
+
+        if(chef == 0){
             //Creo a los pinches
             for(i = 0; i<numPinches; i++){
                 pidPinches[i]=fork();
@@ -35,7 +36,7 @@ int main(int argc, char *argv[]){
                     break;
                 }
             }
-        } 
+        }
     }
     
     return 0;
