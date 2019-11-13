@@ -18,14 +18,14 @@ int main(int argc, char *argv[])
 
     int numPinches, i, aleatorio, ingredientes, salida, platos = 0;
     pid_t *pidPinches, somelier, jefeDeSala, chef;
-    struct sigaction sigSom, sigPin, sigJef;
+    struct sigaction sigSom = {0}, sigPin = {0}, sigJef = {0};
 
     numPinches = atoi(argv[1]);
 
     chef = getpid();
     pidPinches = (int *)malloc(numPinches * sizeof(int));
 
-    printf("%d: Soy el chef, arrancando...\n", chef);
+    printf("\nCHEF: Generando hijos para arrancar...\n");
 
     /*CREACIÓN DE HIJOS*/
 
@@ -187,11 +187,14 @@ void manejadoraSomelier(int s)
 
     int salida, encontrado;
     pid_t mozo;
-    struct sigaction sigMoz;
+    struct sigaction sigMoz = {0};
     sigMoz.sa_handler = manejadoraMozo;
+   
+
     if ((mozo = fork()) == 0)
     {
         sigaction(SIGPIPE, &sigMoz, NULL);
+
         for (;;)
             pause();
     }
@@ -202,9 +205,10 @@ void manejadoraSomelier(int s)
     if (s == SIGUSR2)
         printf("SOMELIER: Avisando al mozo de que falta vino...\n");
 
-    sleep(2);
+    sleep(3);
 
     kill(mozo, SIGPIPE);
+
     waitpid(mozo, &salida, 0);
 
     if (WIFEXITED(salida))
@@ -232,7 +236,7 @@ void manejadoraMozo(int s)
     srand(getpid());
     int encontrado;
     printf("MOZO: Yendo a por lo que falta...\n");
-
+    sleep(1); //Para que no salga el mensaje instantaneamente
     encontrado = calculaAleatorios(0, 1);
 
     if (encontrado == 0)
