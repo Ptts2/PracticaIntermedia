@@ -66,31 +66,28 @@ int main(int argc, char *argv[]){
         if(aleatorio == 0){
             printf("CHEF: Me faltan ingredientes, avisando al Somelier...\n");
             kill(somelier, SIGUSR1);
-            waitpid(somelier, &salida, 0);
-
-            //Para almacenar los 8 bits mas altos
-            if(WIFEXITED(salida))
-                ingredientes = WEXITSTATUS(salida);
+            
         }else{
             printf("CHEF: Me falta vino, avisando al Somelier...\n");
             kill(somelier, SIGUSR2);
-            waitpid(somelier, &salida, 0);
-
-            //Para almacenar los 8 bits mas altos
-            if(WIFEXITED(salida))
-                ingredientes = WEXITSTATUS(salida);
         }
+        waitpid(somelier, &salida, 0);
+
+        //Para almacenar los 8 bits de mas peso
+        if(WIFEXITED(salida))
+           ingredientes = WEXITSTATUS(salida);
 
         if(ingredientes == 1){  //Falta vino
             printf("CHEF: Me falta vino, cierro...\n");
                 
-            //Mato a mis hijos
-            kill(somelier, SIGKILL);
-            kill(jefeDeSala, SIGKILL);
-            for(i = 0; i<numPinches; i++){
+        //Mato a mis hijos
+        kill(somelier, SIGKILL);
+        kill(jefeDeSala, SIGKILL);
+        for(i = 0; i<numPinches; i++){
                 kill(pidPinches[i], SIGKILL);
-            }
-            exit(-1);
+        }
+        exit(-1);
+
         }else{
             
             //Faltan ingredientes
@@ -123,7 +120,8 @@ void manejadoraSomelier(int s){
 
     if(s == SIGUSR2)
         printf("SOMELIER: Avisando al mozo de que falta vino...\n");
-
+    
+    sleep(2);
     kill(mozo, SIGPIPE);
 
     waitpid(mozo, &salida, 0);
