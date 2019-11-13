@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
 
     
     int numPinches, i, aleatorio, ingredientes, salida;
-    pid_t *pidPinches, somelier, jefeDeSala, mozo, chef;
+    pid_t *pidPinches, somelier, jefeDeSala, chef;
     struct sigaction sigSom;
 
     numPinches = atoi(argv[1]);
