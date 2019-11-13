@@ -8,16 +8,16 @@
 #include <errno.h>
 
 int calculaAleatorios(int min, int max);
-void manejadoraSomelier1(int s);
-void manejadoraSomelier2(int s);
+void manejadoraSomelier(int s);
 void manejadoraJefe(int s);
 void manejadoraMozo(int s);
+
 int main(int argc, char *argv[]){
 
     
     int numPinches, i, aleatorio, ingredientes, salida;
     pid_t *pidPinches, somelier, jefeDeSala, mozo, chef;
-    struct sigaction sigSom1, sigSom2;
+    struct sigaction sigSom;
 
     numPinches = atoi(argv[1]);
 
@@ -29,21 +29,14 @@ int main(int argc, char *argv[]){
     /*CREACIÓN DE HIJOS*/
 
     if( (somelier = fork()) == 0){
-        if( (mozo = fork()) == 0){
+        
+        //Handler de señales del somelier
+        sigSom.sa_handler = manejadoraSomelier; 
 
-            
-            for(;;) pause();
-        }else{
-
-            //Handler de señales
-            sigSom1.sa_handler = manejadoraSomelier1; 
-            sigSom2.sa_handler = manejadoraSomelier2; 
-
-            printf("(%d)",getpid());
-            sigaction(SIGUSR1, &sigSom1, NULL); //Maneja la señal faltan ingredientes
-            sigaction(SIGUSR2, &sigSom2, NULL); //Maneja la señal falta vino
-            for(;;) pause();
-        }
+        sigaction(SIGUSR1, &sigSom, NULL); //Maneja la señal faltan ingredientes
+        sigaction(SIGUSR2, &sigSom, NULL); //Maneja la señal falta vino
+        for(;;) pause();
+        
     }else{
         jefeDeSala = fork();
         if(chef == getpid()){
@@ -64,14 +57,14 @@ int main(int argc, char *argv[]){
      /*CÓDIGO DEL PADRE*/
     if(chef == getpid()){
 
-        printf("(%d)CHEF: Hijos generados, empezando a cocinar...\n\n",chef);
+        printf("CHEF: Hijos generados, empezando a cocinar...\n\n");
 
-        printf("(%d)CHEF: Comprobando ingredientes...\n",chef);
+        printf("CHEF: Comprobando ingredientes...\n");
         sleep(3);
         aleatorio = calculaAleatorios(0,1);
 
         if(aleatorio == 0){
-            printf("(%d)CHEF: Me faltan ingredientes, avisando al Somelier...\n",chef);
+            printf("CHEF: Me faltan ingredientes, avisando al Somelier...\n");
             kill(somelier, SIGUSR1);
             waitpid(somelier, &salida, 0);
 
@@ -79,7 +72,7 @@ int main(int argc, char *argv[]){
             if(WIFEXITED(salida))
                 ingredientes = WEXITSTATUS(salida);
         }else{
-            printf("(%d)CHEF: Me falta vino, avisando al Somelier...\n",chef);
+            printf("CHEF: Me falta vino, avisando al Somelier...\n");
             kill(somelier, SIGUSR2);
             waitpid(somelier, &salida, 0);
 
@@ -89,7 +82,7 @@ int main(int argc, char *argv[]){
         }
 
         if(ingredientes == 1){  //Falta vino
-            printf("(%d)CHEF: Me faltan vino, cierro...\n",chef);
+            printf("CHEF: Me falta vino, cierro...\n");
                 
             //Mato a mis hijos
             kill(somelier, SIGKILL);
@@ -102,27 +95,74 @@ int main(int argc, char *argv[]){
             
             //Faltan ingredientes
             if(ingredientes == 2)
-                printf("(%d)CHEF: Me faltan ingredientes, pero sigo cocinando\n",chef);
+                printf("CHEF: Me faltan ingredientes, pero sigo cocinando\n");
 
             //Aviso a los pinches
-            printf("(%d)CHEF: Avisando a los pinches para que se pongan a cocinar...\n",chef);
+            printf("CHEF: Avisando a los pinches para que se pongan a cocinar...\n");
         }
     }
 
     return 0;
 }
 
-void manejadoraSomelier1(int s){
-    printf("SOMELIER: Avisando al mozo de que faltan ingredientes...\n");
-
-    exit(2);
-}
-
-void manejadoraSomelier2(int s){
-    printf("SOMELIER: Avisando al mozo de que falta vino...\n");
+/*MANEJADORA DEL SOMELIER SI FALTAN INGREDIENTES O VINO*/
+void manejadoraSomelier(int s){
     
-    exit(2);
+    int salida, encontrado;
+    pid_t mozo;
+    struct sigaction sigMoz;
+    sigMoz.sa_handler = manejadoraMozo;
+    if( (mozo = fork()) == 0){
+            
+            sigaction(SIGPIPE, &sigMoz, NULL);
+            for(;;) pause();
+    }
+
+    if(s == SIGUSR1)
+        printf("SOMELIER: Avisando al mozo de que faltan ingredientes...\n");
+
+    if(s == SIGUSR2)
+        printf("SOMELIER: Avisando al mozo de que falta vino...\n");
+
+    kill(mozo, SIGPIPE);
+
+    waitpid(mozo, &salida, 0);
+
+    if(WIFEXITED(salida))
+       encontrado = WEXITSTATUS(salida);
+    
+    if(encontrado == 0){
+        
+        if(s == SIGUSR1) //Faltan ingredientes
+           exit(2);
+        
+        if(s == SIGUSR2) //Falta vino
+           exit(1);
+    }else{
+        exit(3); //No falta nada
+    }
+     
+    
 }
+
+/*MANEJADORA DEL MOZO*/
+void manejadoraMozo(int s){
+   
+   srand(getpid());
+   int encontrado;
+   printf("MOZO: Yendo a por lo que falta...\n");
+
+   encontrado = calculaAleatorios(0,1);
+   
+   if(encontrado == 0){
+        printf("MOZO: No lo he podido encontrar\n");
+        exit(0);
+   }else{
+        printf("MOZO: Lo he encontrado\n");
+        exit(1);
+   }
+}
+
 
 int calculaAleatorios(int min, int max) {
 
