@@ -75,34 +75,76 @@ int main(int argc, char *argv[])
 
     /*CÓDIGO DEL PADRE*/
 
-    if (chef == getpid())
+    
+    printf("CHEF: Hijos generados, empezando a cocinar...\n\n");
+
+    printf("CHEF: Comprobando ingredientes...\n");
+    sleep(3);
+    aleatorio = calculaAleatorios(0, 1);
+
+    if (aleatorio == 0)
     {
-        printf("CHEF: Hijos generados, empezando a cocinar...\n\n");
+        printf("CHEF: Me faltan ingredientes, avisando al Somelier...\n");
+        kill(somelier, SIGUSR1);
+    }
+    else
+    {
+        printf("CHEF: Me falta vino, avisando al Somelier...\n");
+        kill(somelier, SIGUSR2);
+    }
+    waitpid(somelier, &salida, 0);
 
-        printf("CHEF: Comprobando ingredientes...\n");
-        sleep(3);
-        aleatorio = calculaAleatorios(0, 1);
+    //Para almacenar los 8 bits de mas peso
+    if (WIFEXITED(salida))
+        ingredientes = WEXITSTATUS(salida);
 
-        if (aleatorio == 0)
+    //Falta vino
+    if (ingredientes == 1)
+    {
+        printf("CHEF: Me falta vino, cierro\n");
+
+        //Mato a mis hijos
+        kill(somelier, SIGKILL);
+        kill(jefeDeSala, SIGKILL);
+        for (i = 0; i < numPinches; i++)
         {
-            printf("CHEF: Me faltan ingredientes, avisando al Somelier...\n");
-            kill(somelier, SIGUSR1);
+            kill(pidPinches[i], SIGKILL);
+        }
+            exit(-1);
         }
         else
         {
-            printf("CHEF: Me falta vino, avisando al Somelier...\n");
-            kill(somelier, SIGUSR2);
-        }
-        waitpid(somelier, &salida, 0);
+        //Faltan ingredientes
+        if (ingredientes == 2)
+            printf("CHEF: Me faltan ingredientes, pero sigo cocinando\n");
 
-        //Para almacenar los 8 bits de mas peso
-        if (WIFEXITED(salida))
-            ingredientes = WEXITSTATUS(salida);
+        //Aviso a los pinches
+        printf("CHEF: Avisando a los pinches para que se pongan a cocinar...\n");
 
-        //Falta vino
-        if (ingredientes == 1)
+        //Los pinches se ponen a cocinar
+        for (i = 0; i < numPinches; i++)
         {
-            printf("CHEF: Me falta vino, cierro\n");
+            printf("PINCHE %d: Cocinando plato...\n", (i + 1));
+            kill(pidPinches[i], SIGUSR1);
+            waitpid(pidPinches[i], &salida, 0);
+
+            if (WIFEXITED(salida))
+            {
+                if (WEXITSTATUS(salida) == 1) //Si devuelve 1 es que el plato se cocina bien por lo que sumo 1 plato
+                {
+                    printf("PINCHE %d: El plato se ha cocinado correctamente\n", (i + 1));
+                    platos++;
+                }
+                else
+                {
+                    printf("PINCHE %d: El plato se ha cocinado mal\n", (i + 1));
+                }
+            }
+        }
+
+        if (platos == 0)
+        {
+            printf("CHEF: No se han cocinado platos, cierro\n");
 
             //Mato a mis hijos
             kill(somelier, SIGKILL);
@@ -115,70 +157,26 @@ int main(int argc, char *argv[])
         }
         else
         {
-            //Faltan ingredientes
-            if (ingredientes == 2)
-                printf("CHEF: Me faltan ingredientes, pero sigo cocinando\n");
+            printf("CHEF: Los platos cocinados han sido %d \n", platos);
 
-            //Aviso a los pinches
-            printf("CHEF: Avisando a los pinches para que se pongan a cocinar...\n");
+            printf("CHEF: Avisando al Jefe de sala para que monte las mesas...\n");
+            kill(jefeDeSala, SIGUSR1);
+            wait(NULL);
 
-            //Los pinches se ponen a cocinar
+            printf("CHEF: PUEDE ABRIRSE EL RESTAURANTE\n");
+
+            //Termino con el programa
+            kill(somelier, SIGKILL);
+            kill(jefeDeSala, SIGKILL);
             for (i = 0; i < numPinches; i++)
             {
-                printf("PINCHE %d: Cocinando plato...\n", (i + 1));
-                kill(pidPinches[i], SIGUSR1);
-                waitpid(pidPinches[i], &salida, 0);
-
-                if (WIFEXITED(salida))
-                {
-                    if (WEXITSTATUS(salida) == 1) //Si devuelve 1 es que el plato se cocina bien por lo que sumo 1 plato
-                    {
-                        printf("PINCHE %d: El plato se ha cocinado correctamente\n", (i + 1));
-                        platos++;
-                    }
-                    else
-                    {
-                        printf("PINCHE %d: El plato se ha cocinado mal\n", (i + 1));
-                    }
-                }
+                kill(pidPinches[i], SIGKILL);
             }
-
-            if (platos == 0)
-            {
-                printf("CHEF: No se han cocinado platos, cierro\n");
-
-                //Mato a mis hijos
-                kill(somelier, SIGKILL);
-                kill(jefeDeSala, SIGKILL);
-                for (i = 0; i < numPinches; i++)
-                {
-                    kill(pidPinches[i], SIGKILL);
-                }
-                exit(-1);
-            }
-            else
-            {
-                printf("CHEF: Los platos cocinados han sido %d \n", platos);
-
-                printf("CHEF: Avisando al Jefe de sala para que monte las mesas...\n");
-                kill(jefeDeSala, SIGUSR1);
-                wait(NULL);
-
-                printf("CHEF: PUEDE ABRIRSE EL RESTAURANTE\n");
-
-                //Termino con el programa
-                kill(somelier, SIGKILL);
-                kill(jefeDeSala, SIGKILL);
-                for (i = 0; i < numPinches; i++)
-                {
-                    kill(pidPinches[i], SIGKILL);
-                }
-                exit(-1);
-            }
+            exit(-1);
         }
     }
 
-    return 0;
+return 0;
 }
 
 /*MANEJADORA DEL SOMELIER SI FALTAN INGREDIENTES O VINO*/
