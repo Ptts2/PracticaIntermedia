@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 
     int numPinches, i, aleatorio, ingredientes, salida, platos = 0;
     pid_t *pidPinches, somelier, jefeDeSala, chef;
-    struct sigaction sigSom = {0}, sigPin = {0}, sigJef = {0};
+    struct sigaction sigSom, sigPin, sigJef;
 
     numPinches = atoi(argv[1]);
 
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
         printf("CHEF: Me falta vino, avisando al Somelier...\n");
         kill(somelier, SIGUSR2);
     }
-    waitpid(somelier, &salida, 0);
+    wait(&salida);
 
     //Para almacenar los 8 bits de mas peso
     ingredientes = WEXITSTATUS(salida);
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
         {
             printf("PINCHE %d: Cocinando plato...\n", (i + 1));
             kill(pidPinches[i], SIGUSR1);
-            waitpid(pidPinches[i], &salida, 0);
+            wait(&salida);
 
             if (WEXITSTATUS(salida) == 1) //Si devuelve 1 es que el plato se cocina bien por lo que sumo 1 plato
             {
@@ -181,7 +181,7 @@ void manejadoraSomelier(int s)
 
     int salida, encontrado;
     pid_t mozo;
-    struct sigaction sigMoz = {0};
+    struct sigaction sigMoz;
     sigMoz.sa_handler = manejadoraMozo;
    
 
@@ -203,7 +203,7 @@ void manejadoraSomelier(int s)
 
     kill(mozo, SIGPIPE);
 
-    waitpid(mozo, &salida, 0);
+    wait(&salida);
 
     encontrado = WEXITSTATUS(salida);
 
