@@ -95,8 +95,7 @@ int main(int argc, char *argv[])
     waitpid(somelier, &salida, 0);
 
     //Para almacenar los 8 bits de mas peso
-    if (WIFEXITED(salida))
-        ingredientes = WEXITSTATUS(salida);
+    ingredientes = WEXITSTATUS(salida);
 
     //Falta vino
     if (ingredientes == 1)
@@ -128,17 +127,14 @@ int main(int argc, char *argv[])
             kill(pidPinches[i], SIGUSR1);
             waitpid(pidPinches[i], &salida, 0);
 
-            if (WIFEXITED(salida))
+            if (WEXITSTATUS(salida) == 1) //Si devuelve 1 es que el plato se cocina bien por lo que sumo 1 plato
             {
-                if (WEXITSTATUS(salida) == 1) //Si devuelve 1 es que el plato se cocina bien por lo que sumo 1 plato
-                {
-                    printf("PINCHE %d: El plato se ha cocinado correctamente\n", (i + 1));
-                    platos++;
-                }
-                else
-                {
-                    printf("PINCHE %d: El plato se ha cocinado mal\n", (i + 1));
-                }
+               printf("PINCHE %d: El plato se ha cocinado correctamente\n", (i + 1));
+               platos++;
+            }
+            else
+            {
+               printf("PINCHE %d: El plato se ha cocinado mal\n", (i + 1));
             }
         }
 
@@ -209,8 +205,7 @@ void manejadoraSomelier(int s)
 
     waitpid(mozo, &salida, 0);
 
-    if (WIFEXITED(salida))
-        encontrado = WEXITSTATUS(salida);
+    encontrado = WEXITSTATUS(salida);
 
     if (encontrado == 0)
     {
@@ -272,3 +267,4 @@ int calculaAleatorios(int min, int max)
 {
     return rand() % (max - min + 1) + min;
 }
+
