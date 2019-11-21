@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 
     int numPinches, i, aleatorio, ingredientes, salida, platos = 0;
     pid_t *pidPinches, somelier, jefeDeSala, chef;
-    struct sigaction sigSom, sigPin, sigJef;
+    struct sigaction sigSom ={0}, sigPin={0}, sigJef={0}; //El ={0} es para inicializar todos los campos de sigaction a 0
 
     numPinches = atoi(argv[1]);
 
@@ -181,7 +181,7 @@ void manejadoraSomelier(int s)
 
     int salida, encontrado;
     pid_t mozo;
-    struct sigaction sigMoz;
+    struct sigaction sigMoz = {0};
     sigMoz.sa_handler = manejadoraMozo;
    
 
@@ -267,4 +267,3 @@ int calculaAleatorios(int min, int max)
 {
     return rand() % (max - min + 1) + min;
 }
-
